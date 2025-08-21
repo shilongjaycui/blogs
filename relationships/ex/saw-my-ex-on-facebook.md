@@ -1,0 +1,1 @@
+In the late afternoon of 8/21/25, I was on the Facebook iOS app, looking to swipe on some girls on Facebook Dating. As I entered the app, I saw my ex under **People you might know**. And I was overwhelmed by emotions I couldn't name at the moment.
