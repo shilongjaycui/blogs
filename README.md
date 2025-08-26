@@ -1,4 +1,4 @@
-# blogs
+# Blogs
 
 ## Rules:
 - Do not
@@ -11,3 +11,9 @@
 - **Ads, Promotions, and Marketing**
   - First party promotion is allowed, and you may promote and link to your own business, website, mailing list, or fundraiser.
   - Third-party advertising and sponsorships are not allowed. You may not advertise or promote third-party products, services, or brands through Medium posts, publications, or newsletters. This includes images that indicate brand sponsorship in a post or newsletter, or as part of a publication name or logo.
+
+## Platforms
+- [Substack](https://substack.com/@shilongjaycui)
+- [LinkedIn](https://www.linkedin.com/in/shilongjaycui/)
+- [Medium](https://medium.com/@shilongjaycui)
+- Fiverr
