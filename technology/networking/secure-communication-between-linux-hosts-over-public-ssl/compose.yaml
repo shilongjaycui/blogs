@@ -1,0 +1,26 @@
+services:
+  # Simulated GCP VM (Debian 12)
+  graylog-vm:
+    image: debian:bookworm
+    networks:
+      - gcp_vpc
+
+  # Cloudflare Tunnel
+  tunnel-connector:
+    image: cloudflare/cloudflared:2026.1.1
+    environment:
+      - TUNNEL_TOKEN=your_token_here
+    networks:
+      - gcp_vpc
+
+  # Simulated DigitalOcean Droplet (Ubuntu 23.10)
+  digitalocean-droplet:
+    image: ubuntu:mantic
+    networks:
+      - digitalocean_vpc
+
+networks:
+  gcp_vpc:
+    driver: bridge # Learn more about the bridge network driver here: https://docs.docker.com/engine/network/drivers/bridge/
+  digitalocean_vpc:
+    driver: bridge
