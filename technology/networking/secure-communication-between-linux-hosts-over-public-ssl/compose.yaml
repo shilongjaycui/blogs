@@ -9,7 +9,7 @@ services:
   tunnel-connector:
     image: cloudflare/cloudflared:2026.1.1
     environment:
-      - TUNNEL_TOKEN=your_token_here
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     networks:
       - gcp_vpc
 
