@@ -1,0 +1,62 @@
+service:
+  flush: 1
+  log_level: info
+  log_file: /var/log/fluent-bit/fluent-bit.log
+
+pipeline:
+  inputs:
+    # --- System Logs ---
+    - name: tail
+      path: /var/log/syslog
+      tag: sys
+    - name: tail
+      path: /var/log/auth.log
+      tag: auth
+    # --- Application Logs ---
+    - name: tail
+      path: /var/log/fluent-bit/fluent-bit.log
+      tag: fluent_bit
+    # --- System Metrics ---
+    - name: node_exporter_metrics
+      tag: node_metrics
+      scrape_interval: 1
+      metrics: cpu,meminfo,disk,diskstats,netdev,stat,loadavg,filesystem,uname
+
+  filters:
+    # Append hostname to all logs in one step
+    - name: record_modifier
+      match: "*"
+      record:
+        - host ${HOSTNAME}
+
+  outputs:
+    # --- Graylog Log Streams (Ports 5140-5146) ---
+    - name: syslog
+      match: sys
+      host: graylog
+      port: 5140
+      mode: tcp
+      syslog_format: rfc5424
+      syslog_message_key: log
+      syslog_hostname_key: host
+    - name: syslog
+      match: auth
+      host: graylog
+      port: 5141
+      mode: tcp
+      syslog_format: rfc5424
+      syslog_message_key: log
+      syslog_hostname_key: host
+    - name: syslog
+      match: fluent_bit
+      host: graylog-2.gcp.int.revmatics.ai
+      port: 5147
+      mode: tcp
+      syslog_format: rfc5424
+      syslog_message_key: log
+      syslog_hostname_key: host
+    # --- Prometheus Metrics Endpoint ---
+    - name: prometheus_exporter
+      match: node_metrics
+      host: 0.0.0.0
+      port: 2021

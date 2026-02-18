@@ -1,26 +1,113 @@
 services:
-  # Simulated GCP VM (Debian 12)
-  graylog-vm:
-    image: debian:bookworm
+  mongodb:
+    image: mongo:7.0.28
+    container_name: mongodb
+    volumes:
+      - type: volume
+        source: mongodb_data
+        target: /data/db
     networks:
-      - gcp_vpc
+      - gcp-vpc
+    restart: always
+  graylog-datanode:
+    image: graylog/graylog-datanode:7.0.3
+    container_name: graylog-datanode
+    hostname: graylog-datanode
+    environment:
+      - GRAYLOG_DATANODE_NODE_ID_FILE=/var/lib/graylog-datanode/node-id
+      - GRAYLOG_DATANODE_PASSWORD_SECRET=${GRAYLOG_PASSWORD_SECRET}
+      - cluster.name=graylog
+      - node.name=graylog-datanode
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - GRAYLOG_DATANODE_MONGODB_URI=mongodb://mongodb:27017/graylog
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - type: volume
+        source: graylog-datanode_data
+        target: /var/lib/graylog-datanode
+      - type: bind
+        source: ./graylog_datanode_id
+        target: /var/lib/graylog-datanode/node-id
+    networks:
+      - gcp-vpc
+    restart: always
+  graylog:
+    image: graylog/graylog:7.0.4
+    container_name: graylog
+    hostname: graylog
+    depends_on:
+      - mongodb
+      - graylog-datanode
+    ports:
+      # Refactored to long syntax for better readability
+      - target: 9000
+        published: 9000
+        protocol: tcp
+        mode: host
+    environment:
+      - GRAYLOG_NODE_ID_FILE=/usr/share/graylog/config/node-id
+      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_PASSWORD_SECRET}
+      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
+      - GRAYLOG_HTTP_BIND_ADDRESS=${GRAYLOG_HTTP_BIND_ADDRESS}
+      - GRAYLOG_MONGODB_URI=${GRAYLOG_MONGODB_URI}
+      - GRAYLOG_OPENSEARCH_HOSTS=https://admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}@graylog-datanode:9200
+    volumes:
+      - type: bind
+        source: ./graylog_node_id
+        target: /usr/share/graylog/config/node-id
+      - type: volume
+        source: graylog_data
+        target: /usr/share/graylog/data
+    networks:
+      - gcp-vpc
+    restart: always
 
   # Cloudflare Tunnel
   tunnel-connector:
     image: cloudflare/cloudflared:2026.1.1
+    container_name: tunnel-connector
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     networks:
-      - gcp_vpc
+      - gcp-vpc
+    restart: unless-stopped
 
   # Simulated DigitalOcean Droplet (Ubuntu 23.10)
-  digitalocean-droplet:
-    image: ubuntu:mantic
+  fluent-bit:
+    image: fluent/fluent-bit:4.2.2
+    container_name: fluent-bit
+    hostname: fluent-bit
+    volumes:
+      - type: bind
+        source: ./fluent-bit.yaml
+        target: /fluent-bit/etc/fluent-bit.yaml
+        read_only: true
+    command: /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.yaml
     networks:
-      - digitalocean_vpc
+      - digitalocean-vpc
+    restart: always
 
 networks:
-  gcp_vpc:
+  gcp-vpc:
+    name: gcp-vpc
     driver: bridge # Learn more about the bridge network driver here: https://docs.docker.com/engine/network/drivers/bridge/
-  digitalocean_vpc:
+  digitalocean-vpc:
+    name: digitalcocean-vpc
     driver: bridge
+
+volumes:
+  mongodb_data:
+    name: mongodb_data
+  graylog-datanode_data:
+    name: graylog-datanode_data
+  graylog_data:
+    name: graylog_data
